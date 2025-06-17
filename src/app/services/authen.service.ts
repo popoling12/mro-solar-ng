@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, catchError, of, switchMap, map } from 'rxjs';
+import { BehaviorSubject, Observable, tap, catchError, of, switchMap, firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 
@@ -28,7 +28,8 @@ export class AuthenService {
   private readonly API_URL = `${environment.apiUrl}/api/v1/auth`;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
-  private isInitialized = false;
+  private isInitialized = new BehaviorSubject<boolean>(false);
+  public isInitialized$ = this.isInitialized.asObservable();
 
   constructor(
     private http: HttpClient,
@@ -37,30 +38,28 @@ export class AuthenService {
     this.initializeAuth();
   }
 
-  private initializeAuth(): void {
-    if (this.isInitialized) return;
-    
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      this.testToken().pipe(
-        catchError(() => {
-          this.clearAuth();
-          return of(null);
-        })
-      ).subscribe({
-        next: (user) => {
-          if (user) {
-            this.currentUserSubject.next(user);
-          }
-          this.isInitialized = true;
-        },
-        error: () => {
-          this.clearAuth();
-          this.isInitialized = true;
+  private async initializeAuth(): Promise<void> {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        const user = await firstValueFrom(
+          this.testToken().pipe(
+            catchError(() => {
+              this.clearAuth();
+              return of(null);
+            })
+          )
+        );
+        
+        if (user) {
+          this.currentUserSubject.next(user);
         }
-      });
-    } else {
-      this.isInitialized = true;
+      }
+    } catch (error) {
+      console.error('Auth initialization failed:', error);
+      this.clearAuth();
+    } finally {
+      this.isInitialized.next(true);
     }
   }
 
@@ -114,7 +113,23 @@ export class AuthenService {
   }
 
   isInitializing(): boolean {
-    return !this.isInitialized;
+    return !this.isInitialized.value;
+  }
+
+  // เพิ่มฟังก์ชันรอให้ initialization เสร็จ
+  async waitForInitialization(): Promise<boolean> {
+    if (this.isInitialized.value) {
+      return this.isAuthenticated();
+    }
+    
+    return new Promise((resolve) => {
+      const subscription = this.isInitialized$.subscribe(initialized => {
+        if (initialized) {
+          subscription.unsubscribe();
+          resolve(this.isAuthenticated());
+        }
+      });
+    });
   }
 
   getCurrentUser(): User | null {

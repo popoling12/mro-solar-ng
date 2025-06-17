@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -11,21 +11,31 @@ import { AuthenService } from '../../services/authen.service';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   loginData = {
     email: '',
     password: ''
   };
   errorMessage: string = '';
   isLoading: boolean = false;
+  isCheckingAuth: boolean = true;
 
   constructor(
     private router: Router,
     private authService: AuthenService
-  ) {
-    // ถ้า user login แล้ว ให้ redirect ไป home
-    if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/home']);
+  ) {}
+
+  async ngOnInit() {
+    // รอให้ auth service initialize และตรวจสอบว่า user login แล้วหรือไม่
+    try {
+      const isAuthenticated = await this.authService.waitForInitialization();
+      if (isAuthenticated) {
+        this.router.navigate(['/home']);
+      }
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+    } finally {
+      this.isCheckingAuth = false;
     }
   }
 
