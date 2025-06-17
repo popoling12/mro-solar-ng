@@ -1,0 +1,220 @@
+<div class="container-fluid py-4">
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row mb-4" *ngIf="stats">
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <h5 class="card-title">ผู้ใช้ทั้งหมด</h5>
+          <h2 class="card-text">{{ stats.total_users }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <h5 class="card-title">ผู้ใช้ที่ใช้งานอยู่</h5>
+          <h2 class="card-text">{{ stats.active_users }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body">
+          <h5 class="card-title">ผู้ใช้ที่ไม่ได้ใช้งาน</h5>
+          <h2 class="card-text">{{ stats.inactive_users }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <h5 class="card-title">แผนก</h5>
+          <h2 class="card-text">{{ stats.department_distribution.length }}</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <input type="text" class="form-control" placeholder="ค้นหา..." [(ngModel)]="filters.search">
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" [(ngModel)]="filters.role">
+            <option value="">ทุกบทบาท</option>
+            <option *ngFor="let role of availableRoles" [value]="role">{{ role }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" [(ngModel)]="filters.status">
+            <option value="">ทุกสถานะ</option>
+            <option value="active">ใช้งานอยู่</option>
+            <option value="inactive">ไม่ได้ใช้งาน</option>
+            <option value="pending">รอการยืนยัน</option>
+            <option value="suspended">ระงับการใช้งาน</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <input type="text" class="form-control" placeholder="แผนก" [(ngModel)]="filters.department">
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary me-2" (click)="applyFilters()">ค้นหา</button>
+          <button class="btn btn-secondary" (click)="clearFilters()">ล้าง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create User Button -->
+  <div class="mb-4" *ngIf="permissions?.can_create_users">
+    <button class="btn btn-success" (click)="openModal(createUserModal)">
+      <i class="bi bi-plus-circle"></i> สร้างผู้ใช้ใหม่
+    </button>
+  </div>
+
+  <!-- Users Table -->
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>อีเมล</th>
+              <th>บทบาท</th>
+              <th>สถานะ</th>
+              <th>แผนก</th>
+              <th>วันที่สร้าง</th>
+              <th>การจัดการ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users">
+              <td>{{ user.email }}</td>
+              <td>{{ user.role }}</td>
+              <td>
+                <span [ngClass]="{
+                  'badge bg-success': user.status === 'active',
+                  'badge bg-danger': user.status === 'inactive',
+                  'badge bg-warning': user.status === 'pending',
+                  'badge bg-secondary': user.status === 'suspended'
+                }">
+                  {{ user.status }}
+                </span>
+              </td>
+              <td>{{ user.department || '-' }}</td>
+              <td>{{ user.created_at | date:'short' }}</td>
+              <td>
+                <div class="btn-group">
+                  <button class="btn btn-sm btn-primary" (click)="openModal(editUserModal, user)" *ngIf="permissions?.can_update_users">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button class="btn btn-sm btn-warning" (click)="resetUserPassword(user.id)" *ngIf="permissions?.can_update_users">
+                    <i class="bi bi-key"></i>
+                  </button>
+                  <button class="btn btn-sm btn-danger" (click)="deleteUser(user.id)" *ngIf="permissions?.can_delete_users">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div class="text-center" *ngIf="isLoading">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">กำลังโหลด...</span>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <ngb-pagination
+        [collectionSize]="totalItems"
+        [(page)]="page"
+        [pageSize]="pageSize"
+        (pageChange)="onPageChange($event)"
+        class="d-flex justify-content-center mt-4">
+      </ngb-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Create User Modal -->
+<ng-template #createUserModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">สร้างผู้ใช้ใหม่</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form (ngSubmit)="createUser()">
+      <div class="mb-3">
+        <label class="form-label">อีเมล</label>
+        <input type="email" class="form-control" [(ngModel)]="newUser.email" name="email" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">รหัสผ่าน</label>
+        <input type="password" class="form-control" [(ngModel)]="newUser.password" name="password" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">บทบาท</label>
+        <select class="form-select" [(ngModel)]="newUser.role" name="role" required>
+          <option *ngFor="let role of availableRoles" [value]="role">{{ role }}</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">แผนก</label>
+        <input type="text" class="form-control" [(ngModel)]="newUser.department" name="department">
+      </div>
+      <div class="text-end">
+        <button type="button" class="btn btn-secondary me-2" (click)="modal.dismiss()">ยกเลิก</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isCreating">
+          <span *ngIf="isCreating" class="spinner-border spinner-border-sm me-1"></span>
+          สร้าง
+        </button>
+      </div>
+    </form>
+  </div>
+</ng-template>
+
+<!-- Edit User Modal -->
+<ng-template #editUserModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">แก้ไขผู้ใช้</h4>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form (ngSubmit)="selectedUser && updateUser(selectedUser.id)">
+      <div class="mb-3">
+        <label class="form-label">อีเมล</label>
+        <input type="email" class="form-control" [(ngModel)]="editUser.email" name="email">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">แผนก</label>
+        <input type="text" class="form-control" [(ngModel)]="editUser.department" name="department">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">บทบาท</label>
+        <select class="form-select" [(ngModel)]="roleUpdate.role" name="role">
+          <option *ngFor="let role of availableRoles" [value]="role">{{ role }}</option>
+        </select>
+      </div>
+      <div class="text-end">
+        <button type="button" class="btn btn-secondary me-2" (click)="modal.dismiss()">ยกเลิก</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isUpdating || !selectedUser">
+          <span *ngIf="isUpdating" class="spinner-border spinner-border-sm me-1"></span>
+          บันทึก
+        </button>
+      </div>
+    </form>
+  </div>
+</ng-template>

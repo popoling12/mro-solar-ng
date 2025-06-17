@@ -1,1 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Importing Bootstrap SCSS file. */
+@use 'bootstrap/scss/bootstrap' as bootstrap;
+
+/* Importing Bootstrap SCSS file. */ 
+
+/* Global styles */
+:root {
+  // You can use Bootstrap variables like this:
+  // color: bootstrap.$primary;
+}
