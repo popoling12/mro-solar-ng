@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -83,9 +83,20 @@ export class UserService {
 
   constructor(private http: HttpClient) {}
 
+  // Add private method to get auth headers
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('access_token');
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+  }
+
   // Create new user (Admin only)
   createUser(userData: UserCreate): Observable<UserResponse> {
-    return this.http.post<UserResponse>(this.API_URL, userData);
+    return this.http.post<UserResponse>(this.API_URL, userData, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Get users list with filtering and pagination
@@ -103,66 +114,93 @@ export class UserService {
         httpParams = httpParams.set(key, value.toString());
       }
     });
-    return this.http.get<UserListResponse>(this.API_URL, { params: httpParams });
+    return this.http.get<UserListResponse>(this.API_URL, { 
+      params: httpParams,
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Get current user profile
   getCurrentUser(): Observable<User> {
-    return this.http.get<User>(`${this.API_URL}/me`);
+    return this.http.get<User>(`${this.API_URL}/me`, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Update current user profile
   updateCurrentUser(userData: UserUpdate): Observable<UserResponse> {
-    return this.http.put<UserResponse>(`${this.API_URL}/me`, userData);
+    return this.http.put<UserResponse>(`${this.API_URL}/me`, userData, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Change current user password
   changePassword(passwordData: UserPasswordChange): Observable<UserResponse> {
-    return this.http.post<UserResponse>(`${this.API_URL}/me/change-password`, passwordData);
+    return this.http.post<UserResponse>(`${this.API_URL}/me/change-password`, passwordData, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Get user by ID
   getUserById(userId: number): Observable<User> {
-    return this.http.get<User>(`${this.API_URL}/${userId}`);
+    return this.http.get<User>(`${this.API_URL}/${userId}`, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Update user by ID
   updateUser(userId: number, userData: UserUpdate): Observable<UserResponse> {
-    return this.http.put<UserResponse>(`${this.API_URL}/${userId}`, userData);
+    return this.http.put<UserResponse>(`${this.API_URL}/${userId}`, userData, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Update user role
   updateUserRole(userId: number, roleData: UserRoleUpdate): Observable<UserResponse> {
-    return this.http.put<UserResponse>(`${this.API_URL}/${userId}/role`, roleData);
+    return this.http.put<UserResponse>(`${this.API_URL}/${userId}/role`, roleData, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Reset user password
   resetUserPassword(userId: number): Observable<UserResponse> {
-    return this.http.post<UserResponse>(`${this.API_URL}/${userId}/reset-password`, {});
+    return this.http.post<UserResponse>(`${this.API_URL}/${userId}/reset-password`, {}, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Delete user (soft delete)
   deleteUser(userId: number): Observable<UserResponse> {
-    return this.http.delete<UserResponse>(`${this.API_URL}/${userId}`);
+    return this.http.delete<UserResponse>(`${this.API_URL}/${userId}`, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Restore deleted user
   restoreUser(userId: number): Observable<UserResponse> {
-    return this.http.post<UserResponse>(`${this.API_URL}/${userId}/restore`, {});
+    return this.http.post<UserResponse>(`${this.API_URL}/${userId}/restore`, {}, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Get available roles
   getAvailableRoles(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.API_URL}/roles/available`);
+    return this.http.get<string[]>(`${this.API_URL}/roles/available`, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Check user permissions
   checkUserPermissions(): Observable<any> {
-    return this.http.get(`${this.API_URL}/permissions/check`);
+    return this.http.get(`${this.API_URL}/permissions/check`, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   // Get user statistics
   getUserStats(): Observable<UserStats> {
-    return this.http.get<UserStats>(`${this.API_URL}/stats/summary`);
+    return this.http.get<UserStats>(`${this.API_URL}/stats/summary`, {
+      headers: this.getAuthHeaders()
+    });
   }
 }

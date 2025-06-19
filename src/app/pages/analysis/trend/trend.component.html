@@ -1,0 +1,23 @@
+<div class="trend-container">
+  <h2>Solar Monitoring - Trend Analysis</h2>
+  
+  <div class="controls">
+    <button (click)="addNewPlant()" class="btn-add">Add New Plant</button>
+    <button (click)="addInverterToPlant('plant1')" class="btn-add-inverter">Add Inverter to Plant 1</button>
+    <button (click)="resetToDefault()" class="btn-reset">Reset to Default</button>
+    <button (click)="exportTreeData()" class="btn-export">Export Data</button>
+  </div>
+
+  <div class="tag-tree-section">
+    <h3>Tag Tree Structure</h3>
+    <app-tag-tree 
+      [(tagTreeData)]="tagTreeData"
+      (tagTreeDataChange)="onTagTreeDataChange($event)">
+    </app-tag-tree>
+  </div>
+
+  <div class="data-preview">
+    <h3>Current Tag Tree Data</h3>
+    <pre>{{ tagTreeData | json }}</pre>
+  </div>
+</div>

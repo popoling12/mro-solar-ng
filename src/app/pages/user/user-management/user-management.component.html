@@ -1,220 +1,297 @@
-<div class="container-fluid py-4">
-  <!-- Error Message -->
-  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
-    {{ errorMessage }}
-    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+<div class="container-fluid p-4">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-dark fw-bold">จัดการผู้ใช้งาน</h1>
+      <p class="text-muted mb-0">จัดการข้อมูลผู้ใช้และสิทธิ์การเข้าถึงระบบ</p>
+    </div>
+    <div *ngIf="permissions?.can_create_users">
+      <button nz-button nzType="primary" nzSize="large" (click)="openModal(createUserModal)">
+        <i nz-icon nzType="plus-circle" nzTheme="outline"></i>สร้างผู้ใช้ใหม่
+      </button>
+    </div>
   </div>
+
+  <!-- Error Message -->
+  <nz-alert *ngIf="errorMessage" nzType="error" [nzMessage]="errorMessage" nzShowIcon [nzCloseable]="true" (nzOnClose)="errorMessage = ''"></nz-alert>
 
   <!-- Stats Cards -->
-  <div class="row mb-4" *ngIf="stats">
-    <div class="col-md-3">
-      <div class="card bg-primary text-white">
-        <div class="card-body">
-          <h5 class="card-title">ผู้ใช้ทั้งหมด</h5>
-          <h2 class="card-text">{{ stats.total_users }}</h2>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card bg-success text-white">
-        <div class="card-body">
-          <h5 class="card-title">ผู้ใช้ที่ใช้งานอยู่</h5>
-          <h2 class="card-text">{{ stats.active_users }}</h2>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card bg-warning text-white">
-        <div class="card-body">
-          <h5 class="card-title">ผู้ใช้ที่ไม่ได้ใช้งาน</h5>
-          <h2 class="card-text">{{ stats.inactive_users }}</h2>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card bg-info text-white">
-        <div class="card-body">
-          <h5 class="card-title">แผนก</h5>
-          <h2 class="card-text">{{ stats.department_distribution.length }}</h2>
-        </div>
-      </div>
-    </div>
-  </div>
+  <nz-row [nzGutter]="16" class="mb-4" *ngIf="stats">
+    <nz-col [nzSpan]="6">
+      <nz-card>
+        <nz-statistic
+          [nzValue]="stats.total_users || 0"
+          [nzTitle]="'ผู้ใช้ทั้งหมด'"
+          [nzPrefix]="userIcon">
+        </nz-statistic>
+      </nz-card>
+    </nz-col>
+    <nz-col [nzSpan]="6">
+      <nz-card>
+        <nz-statistic
+          [nzValue]="stats.active_users || 0"
+          [nzTitle]="'ผู้ใช้ที่ใช้งานอยู่'"
+          [nzPrefix]="activeUserIcon">
+        </nz-statistic>
+      </nz-card>
+    </nz-col>
+    <nz-col [nzSpan]="6">
+      <nz-card>
+        <nz-statistic
+          [nzValue]="stats.inactive_users || 0"
+          [nzTitle]="'ผู้ใช้ที่ไม่ได้ใช้งาน'"
+          [nzPrefix]="inactiveUserIcon">
+        </nz-statistic>
+      </nz-card>
+    </nz-col>
+    <nz-col [nzSpan]="6">
+      <nz-card>
+        <nz-statistic
+          [nzValue]="(stats.department_distribution || []).length"
+          [nzTitle]="'แผนก'"
+          [nzPrefix]="departmentIcon">
+        </nz-statistic>
+      </nz-card>
+    </nz-col>
+  </nz-row>
 
-  <!-- Filters -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <div class="row g-3">
-        <div class="col-md-3">
-          <input type="text" class="form-control" placeholder="ค้นหา..." [(ngModel)]="filters.search">
-        </div>
-        <div class="col-md-2">
-          <select class="form-select" [(ngModel)]="filters.role">
-            <option value="">ทุกบทบาท</option>
-            <option *ngFor="let role of availableRoles" [value]="role">{{ role }}</option>
-          </select>
-        </div>
-        <div class="col-md-2">
-          <select class="form-select" [(ngModel)]="filters.status">
-            <option value="">ทุกสถานะ</option>
-            <option value="active">ใช้งานอยู่</option>
-            <option value="inactive">ไม่ได้ใช้งาน</option>
-            <option value="pending">รอการยืนยัน</option>
-            <option value="suspended">ระงับการใช้งาน</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <input type="text" class="form-control" placeholder="แผนก" [(ngModel)]="filters.department">
-        </div>
-        <div class="col-md-2">
-          <button class="btn btn-primary me-2" (click)="applyFilters()">ค้นหา</button>
-          <button class="btn btn-secondary" (click)="clearFilters()">ล้าง</button>
-        </div>
-      </div>
+  <!-- Filters Card -->
+  <nz-card class="mb-4">
+    <div class="d-flex align-items-center mb-3">
+      <i nz-icon nzType="filter" nzTheme="outline" class="me-2"></i>
+      <h6 class="mb-0 fw-semibold">ตัวกรองข้อมูล</h6>
     </div>
-  </div>
-
-  <!-- Create User Button -->
-  <div class="mb-4" *ngIf="permissions?.can_create_users">
-    <button class="btn btn-success" (click)="openModal(createUserModal)">
-      <i class="bi bi-plus-circle"></i> สร้างผู้ใช้ใหม่
-    </button>
-  </div>
+    <nz-row [nzGutter]="16">
+      <nz-col [nzSpan]="6">
+        <nz-form-item>
+          <nz-input-group nzPrefixIcon="search">
+            <input nz-input placeholder="ค้นหา..." [(ngModel)]="filters.search">
+          </nz-input-group>
+        </nz-form-item>
+      </nz-col>
+      <nz-col [nzSpan]="4">
+        <nz-form-item>
+          <nz-select nzPlaceHolder="บทบาท" [(ngModel)]="filters.role">
+            <nz-option nzValue="" nzLabel="ทุกบทบาท"></nz-option>
+            <nz-option *ngFor="let role of availableRoles" [nzValue]="role" [nzLabel]="role"></nz-option>
+          </nz-select>
+        </nz-form-item>
+      </nz-col>
+      <nz-col [nzSpan]="4">
+        <nz-form-item>
+          <nz-select nzPlaceHolder="สถานะ" [(ngModel)]="filters.status">
+            <nz-option nzValue="" nzLabel="ทุกสถานะ"></nz-option>
+            <nz-option nzValue="active" nzLabel="ใช้งานอยู่"></nz-option>
+            <nz-option nzValue="inactive" nzLabel="ไม่ได้ใช้งาน"></nz-option>
+            <nz-option nzValue="pending" nzLabel="รอการยืนยัน"></nz-option>
+            <nz-option nzValue="suspended" nzLabel="ระงับการใช้งาน"></nz-option>
+          </nz-select>
+        </nz-form-item>
+      </nz-col>
+      <nz-col [nzSpan]="6">
+        <nz-form-item>
+          <nz-input-group nzPrefixIcon="bank">
+            <input nz-input placeholder="แผนก" [(ngModel)]="filters.department">
+          </nz-input-group>
+        </nz-form-item>
+      </nz-col>
+      <nz-col [nzSpan]="4">
+        <nz-space>
+          <button nz-button nzType="primary" (click)="applyFilters()">
+            <i nz-icon nzType="search"></i>ค้นหา
+          </button>
+          <button nz-button (click)="clearFilters()">
+            <i nz-icon nzType="reload"></i>ล้าง
+          </button>
+        </nz-space>
+      </nz-col>
+    </nz-row>
+  </nz-card>
 
   <!-- Users Table -->
-  <div class="card">
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>อีเมล</th>
-              <th>บทบาท</th>
-              <th>สถานะ</th>
-              <th>แผนก</th>
-              <th>วันที่สร้าง</th>
-              <th>การจัดการ</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let user of users">
-              <td>{{ user.email }}</td>
-              <td>{{ user.role }}</td>
-              <td>
-                <span [ngClass]="{
-                  'badge bg-success': user.status === 'active',
-                  'badge bg-danger': user.status === 'inactive',
-                  'badge bg-warning': user.status === 'pending',
-                  'badge bg-secondary': user.status === 'suspended'
-                }">
-                  {{ user.status }}
-                </span>
-              </td>
-              <td>{{ user.department || '-' }}</td>
-              <td>{{ user.created_at | date:'short' }}</td>
-              <td>
-                <div class="btn-group">
-                  <button class="btn btn-sm btn-primary" (click)="openModal(editUserModal, user)" *ngIf="permissions?.can_update_users">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                  <button class="btn btn-sm btn-warning" (click)="resetUserPassword(user.id)" *ngIf="permissions?.can_update_users">
-                    <i class="bi bi-key"></i>
-                  </button>
-                  <button class="btn btn-sm btn-danger" (click)="deleteUser(user.id)" *ngIf="permissions?.can_delete_users">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+  <nz-card>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="d-flex align-items-center">
+        <i nz-icon nzType="table" nzTheme="outline" class="me-2"></i>
+        <h6 class="mb-0 fw-semibold">รายชื่อผู้ใช้งาน</h6>
       </div>
-
-      <!-- Loading Spinner -->
-      <div class="text-center" *ngIf="isLoading">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">กำลังโหลด...</span>
-        </div>
-      </div>
-
-      <!-- Pagination -->
-      <ngb-pagination
-        [collectionSize]="totalItems"
-        [(page)]="page"
-        [pageSize]="pageSize"
-        (pageChange)="onPageChange($event)"
-        class="d-flex justify-content-center mt-4">
-      </ngb-pagination>
+      <small class="text-muted">ทั้งหมด {{ totalItems | number }} รายการ</small>
     </div>
-  </div>
+
+    <nz-spin [nzSpinning]="isLoading">
+      <nz-table
+        #basicTable
+        [nzData]="users"
+        [nzTotal]="totalItems"
+        [nzPageSize]="pageSize"
+        [nzPageIndex]="page"
+        [nzFrontPagination]="false"
+        (nzPageIndexChange)="onPageChange($event)"
+        [nzShowSizeChanger]="false"
+        [nzLoading]="isLoading">
+        <thead>
+          <tr>
+            <th><i nz-icon nzType="mail" nzTheme="outline" class="me-2"></i>อีเมล</th>
+            <th><i nz-icon nzType="user" nzTheme="outline" class="me-2"></i>บทบาท</th>
+            <th><i nz-icon nzType="check-circle" nzTheme="outline" class="me-2"></i>สถานะ</th>
+            <th><i nz-icon nzType="bank" nzTheme="outline" class="me-2"></i>แผนก</th>
+            <th><i nz-icon nzType="calendar" nzTheme="outline" class="me-2"></i>วันที่สร้าง</th>
+            <th class="text-center"><i nz-icon nzType="setting" nzTheme="outline" class="me-2"></i>การจัดการ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users; trackBy: trackByUserId">
+            <td>
+              <div class="d-flex align-items-center">
+                <nz-avatar nzIcon="user" class="me-2"></nz-avatar>
+                <div>
+                  <div class="fw-semibold">{{ user.email }}</div>
+                  <small class="text-muted">ID: {{ user.id }}</small>
+                </div>
+              </div>
+            </td>
+            <td>
+              <nz-tag [nzColor]="'blue'">{{ user.role }}</nz-tag>
+            </td>
+            <td>
+              <nz-tag [nzColor]="getStatusColor(user.status)">
+                <i nz-icon [nzType]="getStatusIcon(user.status)" class="me-1"></i>
+                {{ getStatusText(user.status) }}
+              </nz-tag>
+            </td>
+            <td>{{ user.department || '-' }}</td>
+            <td>
+              {{ user.created_at | date:'dd/MM/yyyy' }}
+              <small class="d-block text-muted">{{ user.created_at | date:'HH:mm' }}</small>
+            </td>
+            <td class="text-center">
+              <nz-space>
+                <button nz-button nzType="primary" nzShape="circle" *ngIf="permissions?.can_update_users"
+                        (click)="openModal(editUserModal, user)" nz-tooltip nzTooltipTitle="แก้ไขข้อมูล">
+                  <i nz-icon nzType="edit"></i>
+                </button>
+                <button nz-button nzType="default" nzShape="circle" *ngIf="permissions?.can_update_users"
+                        (click)="resetUserPassword(user.id)" nz-tooltip nzTooltipTitle="รีเซ็ตรหัสผ่าน">
+                  <i nz-icon nzType="key"></i>
+                </button>
+                <nz-popconfirm
+                  nzTitle="คุณต้องการลบผู้ใช้นี้ใช่หรือไม่?"
+                  nzOkText="ใช่"
+                  nzCancelText="ไม่"
+                  (nzOnConfirm)="deleteUser(user.id)"
+                  *ngIf="permissions?.can_delete_users">
+                  <button nz-button nzType="primary" nzDanger nzShape="circle" nz-tooltip nzTooltipTitle="ลบผู้ใช้">
+                    <i nz-icon nzType="delete"></i>
+                  </button>
+                </nz-popconfirm>
+              </nz-space>
+            </td>
+          </tr>
+        </tbody>
+      </nz-table>
+    </nz-spin>
+  </nz-card>
 </div>
 
 <!-- Create User Modal -->
-<ng-template #createUserModal let-modal>
-  <div class="modal-header">
-    <h4 class="modal-title">สร้างผู้ใช้ใหม่</h4>
-    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
-  </div>
-  <div class="modal-body">
-    <form (ngSubmit)="createUser()">
-      <div class="mb-3">
-        <label class="form-label">อีเมล</label>
-        <input type="email" class="form-control" [(ngModel)]="newUser.email" name="email" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">รหัสผ่าน</label>
-        <input type="password" class="form-control" [(ngModel)]="newUser.password" name="password" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">บทบาท</label>
-        <select class="form-select" [(ngModel)]="newUser.role" name="role" required>
-          <option *ngFor="let role of availableRoles" [value]="role">{{ role }}</option>
-        </select>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">แผนก</label>
-        <input type="text" class="form-control" [(ngModel)]="newUser.department" name="department">
-      </div>
-      <div class="text-end">
-        <button type="button" class="btn btn-secondary me-2" (click)="modal.dismiss()">ยกเลิก</button>
-        <button type="submit" class="btn btn-primary" [disabled]="isCreating">
-          <span *ngIf="isCreating" class="spinner-border spinner-border-sm me-1"></span>
-          สร้าง
-        </button>
-      </div>
-    </form>
-  </div>
+<ng-template #createUserModal>
+  <nz-modal
+    [nzVisible]="true"
+    nzTitle="สร้างผู้ใช้ใหม่"
+    [nzFooter]="null"
+    (nzOnCancel)="closeModal()">
+    <ng-container *nzModalContent>
+      <form (ngSubmit)="createUser()" #createForm="ngForm">
+        <nz-form-item>
+          <nz-form-label [nzSpan]="24">อีเมล</nz-form-label>
+          <nz-form-control [nzSpan]="24">
+            <nz-input-group nzPrefixIcon="mail">
+              <input nz-input [(ngModel)]="newUser.email" name="email" required>
+            </nz-input-group>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label [nzSpan]="24">รหัสผ่าน</nz-form-label>
+          <nz-form-control [nzSpan]="24">
+            <nz-input-group nzPrefixIcon="lock">
+              <input nz-input type="password" [(ngModel)]="newUser.password" name="password" required>
+            </nz-input-group>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label [nzSpan]="24">บทบาท</nz-form-label>
+          <nz-form-control [nzSpan]="24">
+            <nz-select [(ngModel)]="newUser.role" name="role" required>
+              <nz-option *ngFor="let role of availableRoles" [nzValue]="role" [nzLabel]="role"></nz-option>
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label [nzSpan]="24">แผนก</nz-form-label>
+          <nz-form-control [nzSpan]="24">
+            <nz-input-group nzPrefixIcon="bank">
+              <input nz-input [(ngModel)]="newUser.department" name="department">
+            </nz-input-group>
+          </nz-form-control>
+        </nz-form-item>
+
+        <div class="text-end">
+          <button nz-button class="me-2" (click)="closeModal()">ยกเลิก</button>
+          <button nz-button nzType="primary" [nzLoading]="isCreating" [disabled]="createForm.invalid">
+            สร้างผู้ใช้
+          </button>
+        </div>
+      </form>
+    </ng-container>
+  </nz-modal>
 </ng-template>
 
 <!-- Edit User Modal -->
-<ng-template #editUserModal let-modal>
-  <div class="modal-header">
-    <h4 class="modal-title">แก้ไขผู้ใช้</h4>
-    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
-  </div>
-  <div class="modal-body">
-    <form (ngSubmit)="selectedUser && updateUser(selectedUser.id)">
-      <div class="mb-3">
-        <label class="form-label">อีเมล</label>
-        <input type="email" class="form-control" [(ngModel)]="editUser.email" name="email">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">แผนก</label>
-        <input type="text" class="form-control" [(ngModel)]="editUser.department" name="department">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">บทบาท</label>
-        <select class="form-select" [(ngModel)]="roleUpdate.role" name="role">
-          <option *ngFor="let role of availableRoles" [value]="role">{{ role }}</option>
-        </select>
-      </div>
-      <div class="text-end">
-        <button type="button" class="btn btn-secondary me-2" (click)="modal.dismiss()">ยกเลิก</button>
-        <button type="submit" class="btn btn-primary" [disabled]="isUpdating || !selectedUser">
-          <span *ngIf="isUpdating" class="spinner-border spinner-border-sm me-1"></span>
-          บันทึก
-        </button>
-      </div>
-    </form>
-  </div>
+<ng-template #editUserModal>
+  <nz-modal
+    [nzVisible]="true"
+    nzTitle="แก้ไขข้อมูลผู้ใช้"
+    [nzFooter]="null"
+    (nzOnCancel)="closeModal()">
+    <ng-container *nzModalContent>
+      <form (ngSubmit)="selectedUser && updateUser(selectedUser.id)" #editForm="ngForm">
+        <nz-form-item>
+          <nz-form-label [nzSpan]="24">อีเมล</nz-form-label>
+          <nz-form-control [nzSpan]="24">
+            <nz-input-group nzPrefixIcon="mail">
+              <input nz-input [(ngModel)]="editUser.email" name="email" required>
+            </nz-input-group>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label [nzSpan]="24">แผนก</nz-form-label>
+          <nz-form-control [nzSpan]="24">
+            <nz-input-group nzPrefixIcon="bank">
+              <input nz-input [(ngModel)]="editUser.department" name="department">
+            </nz-input-group>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label [nzSpan]="24">บทบาท</nz-form-label>
+          <nz-form-control [nzSpan]="24">
+            <nz-select [(ngModel)]="roleUpdate.role" name="role">
+              <nz-option *ngFor="let role of availableRoles" [nzValue]="role" [nzLabel]="role"></nz-option>
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+
+        <div class="text-end">
+          <button nz-button class="me-2" (click)="closeModal()">ยกเลิก</button>
+          <button nz-button nzType="primary" [nzLoading]="isUpdating" [disabled]="!selectedUser">
+            บันทึกการแก้ไข
+          </button>
+        </div>
+      </form>
+    </ng-container>
+  </nz-modal>
 </ng-template>

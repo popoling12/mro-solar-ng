@@ -26,6 +26,7 @@ export interface User {
 })
 export class AuthenService {
   private readonly API_URL = `${environment.apiUrl}/api/v1/auth`;
+  private readonly TOKEN_KEY = 'access_token';
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
   private isInitialized = new BehaviorSubject<boolean>(false);
@@ -40,11 +41,16 @@ export class AuthenService {
 
   private async initializeAuth(): Promise<void> {
     try {
-      const token = localStorage.getItem('access_token');
+      console.log('🔄 Auth Service: Initializing...');
+      const token = this.getToken();
+      console.log('🔑 Auth Service: Token exists?', !!token);
+      
       if (token) {
+        console.log('🔄 Auth Service: Testing token...');
         const user = await firstValueFrom(
           this.testToken().pipe(
-            catchError(() => {
+            catchError((error) => {
+              console.error('❌ Auth Service: Token test failed', error);
               this.clearAuth();
               return of(null);
             })
@@ -52,29 +58,46 @@ export class AuthenService {
         );
         
         if (user) {
+          console.log('✅ Auth Service: Token valid, user authenticated');
           this.currentUserSubject.next(user);
+        } else {
+          console.log('❌ Auth Service: Invalid token, clearing auth');
+          this.clearAuth();
         }
+      } else {
+        console.log('ℹ️ Auth Service: No token found');
       }
     } catch (error) {
-      console.error('Auth initialization failed:', error);
+      console.error('❌ Auth Service: Initialization failed:', error);
       this.clearAuth();
     } finally {
+      console.log('✅ Auth Service: Initialization complete');
       this.isInitialized.next(true);
     }
   }
 
   login(email: string, password: string): Observable<User> {
+    console.log('🔑 Auth Service: Attempting login...');
     const formData = new FormData();
     formData.append('username', email);
     formData.append('password', password);
 
     return this.http.post<TokenResponse>(`${this.API_URL}/login/access-token`, formData).pipe(
-      switchMap(response => {
-        localStorage.setItem('access_token', response.access_token);
+      tap(response => {
+        console.log('✅ Auth Service: Login successful, setting token');
+        this.setToken(response.access_token);
+      }),
+      switchMap(() => {
+        console.log('🔄 Auth Service: Testing new token...');
         return this.testToken();
       }),
       tap(user => {
+        console.log('✅ Auth Service: Token valid, setting user data');
         this.currentUserSubject.next(user);
+      }),
+      catchError(error => {
+        console.error('❌ Auth Service: Login failed:', error);
+        throw error;
       })
     );
   }
@@ -89,34 +112,32 @@ export class AuthenService {
   }
 
   private clearAuth(): void {
-    localStorage.removeItem('access_token');
+    console.log('🧹 Auth Service: Clearing authentication data');
+    localStorage.removeItem(this.TOKEN_KEY);
     this.currentUserSubject.next(null);
   }
 
-  recoverPassword(email: string): Observable<any> {
-    return this.http.post(`${this.API_URL}/password-recovery/${email}`, {});
-  }
-
-  resetPassword(token: string, newPassword: string): Observable<any> {
-    return this.http.post(`${this.API_URL}/reset-password/`, {
-      token,
-      new_password: newPassword
-    });
+  private setToken(token: string): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('access_token');
+    const token = localStorage.getItem(this.TOKEN_KEY);
+    console.log('🔑 Auth Service: Getting token', !!token);
+    return token;
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken() && !!this.currentUserSubject.value;
+    const hasToken = !!this.getToken();
+    const hasUser = !!this.currentUserSubject.value;
+    console.log('🔒 Auth Service: Checking authentication', { hasToken, hasUser });
+    return hasToken && hasUser;
   }
 
   isInitializing(): boolean {
     return !this.isInitialized.value;
   }
 
-  // เพิ่มฟังก์ชันรอให้ initialization เสร็จ
   async waitForInitialization(): Promise<boolean> {
     if (this.isInitialized.value) {
       return this.isAuthenticated();
@@ -134,5 +155,16 @@ export class AuthenService {
 
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
+  }
+
+  recoverPassword(email: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/password-recovery/${email}`, {});
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/reset-password/`, {
+      token,
+      new_password: newPassword
+    });
   }
 }

@@ -1,0 +1,60 @@
+<div class="profile-container">
+  <nz-card class="profile-card" nzTitle="Profile Information">
+    <form nz-form [formGroup]="profileForm" (ngSubmit)="updateProfile()">
+      <nz-form-item>
+        <nz-form-label [nzSpan]="6" nzRequired>Email</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Please input your email!">
+          <input nz-input formControlName="email" placeholder="Enter your email" />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label [nzSpan]="6">Department</nz-form-label>
+        <nz-form-control [nzSpan]="14">
+          <input nz-input formControlName="department" placeholder="Enter your department" />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-control [nzSpan]="14" [nzOffset]="6">
+          <button nz-button nzType="primary" type="submit" [nzLoading]="isLoading" [disabled]="!profileForm.valid">
+            Update Profile
+          </button>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </nz-card>
+
+  <nz-card class="password-card" nzTitle="Change Password">
+    <form nz-form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+      <nz-form-item>
+        <nz-form-label [nzSpan]="6" nzRequired>Current Password</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Please input your current password!">
+          <input nz-input type="password" formControlName="current_password" placeholder="Enter current password" />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label [nzSpan]="6" nzRequired>New Password</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Password must be at least 8 characters!">
+          <input nz-input type="password" formControlName="new_password" placeholder="Enter new password" />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label [nzSpan]="6" nzRequired>Confirm Password</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Please confirm your new password!">
+          <input nz-input type="password" formControlName="confirm_password" placeholder="Confirm new password" />
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-control [nzSpan]="14" [nzOffset]="6">
+          <button nz-button nzType="primary" type="submit" [nzLoading]="isLoading" [disabled]="!passwordForm.valid">
+            Change Password
+          </button>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </nz-card>
+</div>

@@ -1,0 +1,58 @@
+.profile-container {
+  max-width: 800px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+.profile-card,
+.password-card {
+  margin-bottom: 24px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  gap: 1rem;
+}
+
+mat-card-header {
+  margin-bottom: 1rem;
+}
+
+mat-form-field {
+  margin-bottom: 1rem;
+}
+
+:host ::ng-deep {
+  .ant-form-item {
+    margin-bottom: 24px;
+  }
+
+  .ant-card-head {
+    min-height: 48px;
+  }
+
+  .ant-card-head-title {
+    font-size: 16px;
+    font-weight: 500;
+  }
+}
+
+@media (max-width: 576px) {
+  .profile-container {
+    margin: 16px auto;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+}
